@@ -6,12 +6,12 @@ using namespace bangtal;
 
 
 ScenePtr scene;
-ObjectPtr game_board[16];
+ObjectPtr game_board[16], game_orginal[16];
 ObjectPtr start;
 
 TimerPtr timer;
 float animationTime = 0.1f;
-int mixCount = 5;
+int mixCount = 100;
 
 int blank;
 
@@ -57,7 +57,29 @@ int random_move() {
 }
 
 void start_game(){
+    mixCount=100;
+    
+    timer->set(animationTime);
     timer->start();
+    
+    blank = 15;
+    game_board[blank]->hide();
+    
+    start->hide();
+}
+
+bool check_end(){
+    for (int i =0; i<16; i++){
+        if(game_board[i] != game_orginal[i]) return false;
+    }
+    return true;
+}
+
+void end_game(){
+    game_board[blank]->show();
+    start->show();
+    
+    showMessage("Complited");
 }
 
 void init_game() {
@@ -69,10 +91,17 @@ void init_game() {
         game_board[i] = Object::create(path, scene, index_to_x(i), index_to_y(i));
         game_board[i]->setOnMouseCallback([&](auto piece, auto x, auto y, auto action)->bool {
             int index = game_index(piece);
-            if (check_move(index)) game_move(index);
+            if (check_move(index)) {
+                game_move(index);
+                
+                if(check_end()){
+                    end_game();
+                }
+            }
             
             return true;
         });
+        game_orginal[i]=game_board[i];
     }
     
     start = Object::create("start.png", scene,590,100);
@@ -85,14 +114,15 @@ void init_game() {
     timer->setOnTimerCallback([&](auto)->bool{
         game_move(random_move());
         
-        timer->set(animationTime);
-        timer->start();
+        mixCount--;
+        if (mixCount>0){
+            timer->set(animationTime);
+            timer->start();
+        }
+        
         
         return true;
     });
-    
-    blank = 15;
-    game_board[blank]->hide();
     
     startGame(scene);
 }
